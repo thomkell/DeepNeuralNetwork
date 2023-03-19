@@ -84,7 +84,7 @@ int main() {
     double inputCSV[1000][31];
 
     // read input data from a csv
-    FILE *fstream = fopen("/Users/thomaskeller/CLionProjects/COMP605/dataALL_N1.csv", "r");
+    FILE *fstream = fopen("dataALL_N1.csv", "r");
     if(fstream == NULL)
     {
         printf("\n file opening failed ");
