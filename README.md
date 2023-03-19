@@ -1,4 +1,4 @@
-# Neural Network in C
+# Deep Neural Network in C with 2 layers
 Code written by: Anu, Thomas, Zack
 
 # Dataset
