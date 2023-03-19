@@ -1,11 +1,11 @@
-# Neural Network in C
+#Neural Network in C
 Code written by: Anu, Thomas, Zack
 
-# Dataset
+#Dataset
 https://www.kaggle.com/datasets/uciml/breast-cancer-wisconsin-data?resource=download
 
-# Code based on that example:
+#Code based on example:
 https://github.com/niconielsen32
 
-# Licence:
+#Licence:
 MIT
