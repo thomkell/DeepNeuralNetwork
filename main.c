@@ -1,5 +1,8 @@
 // Neural Network serial code
-// Thomas, Zack, Anu
+// Anu, Thomas, Zack
+
+// Stochatic smoething for back propagation
+// hypotetical prediction ask dumett
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +14,7 @@
 
 #define MAX(a,b) (((a)>(b))?(a):(b))           // macro to find maximum of two numbers
 
-#define learningRate 0.001f                    // defining a constant for learning rate
+#define learningRate 0.0001f                    // defining a constant for learning rate
 
 //double sigmoid(double x) { return 1/(1+exp(-x)); } //forward propagation
 double dSigmoid(double x) {
@@ -50,7 +53,6 @@ void shuffle(int *array, size_t n){
     }
 }
 
-
 #define numInputs 30               // number of columns
 #define numHiddenNodes 30          // number of nodes in the first hidden layer
 #define numHiddenNodes2 30         // number of nodes in the second hidden layer
@@ -84,7 +86,7 @@ int main() {
     double inputCSV[1000][31];
 
     // read input data from a csv
-    FILE *fstream = fopen("dataALL_N1.csv", "r");
+    FILE *fstream = fopen("/Users/thomaskeller/CLionProjects/COMP605/dataALL_N1.csv", "r");
     if(fstream == NULL)
     {
         printf("\n file opening failed ");
@@ -217,7 +219,8 @@ int main() {
 
     // shuffling training set
     shuffle(trainingSetOrder, cutOffTrain);
-    int numberOfEpochs = 1500;                            // number of epochs
+
+    int numberOfEpochs = 100;                            // number of epochs
 
     // start time measurement
     struct timeval time1, time2;
@@ -250,7 +253,7 @@ int main() {
                 double activation = hiddenLayerBias2[j];
 
                 for(int k = 0; k < numHiddenNodes; k++){
-                    activation += trainingInputs[i][k] * hiddenWeights2[k][j];
+                    activation += hiddenLayer[k] * hiddenWeights2[k][j];
                 }
 
                 hiddenLayer2[j] = relu(activation);
@@ -266,16 +269,18 @@ int main() {
 
                 outputLayer[j] = sigmoid(activation);
             }
-            /*
+
             printf("Input: %g | %g | %g | %g | %g | %g |      Output: %g      Expected Output: %g \n",
                    trainingInputs[i][1], trainingInputs[i][2], trainingInputs[i][3], trainingInputs[i][4], trainingInputs[i][5], trainingInputs[i][6],
                    outputLayer[0], trainingOutputs[i][0]);
-            */
+
             // Backpropagation
             // Compute change in output weights
             double deltaOutput[numOutputs];
             for(int j = 0; j < numOutputs; j++){
-                double error = (trainingOutputs[i][j] - outputLayer[j]);
+                double error = (trainingOutputs[i][j] - outputLayer[j]); // L1
+                //double error = -((outputLayer[j] * log(trainingOutputs[i][j])) + ((1-outputLayer[j]) * log(trainingOutputs[i][j]))); // cross entropy
+                //double error = (1/numOutputs)*(pow(trainingOutputs[i][j] - outputLayer[j],2)); // MSE
                 deltaOutput[j] = error * dSigmoid(outputLayer[j]) ;
             }
 
@@ -322,13 +327,11 @@ int main() {
                     hiddenWeights[k][j] += trainingInputs[i][k] * deltaHidden[j] * lr;
                 }
             }
-
         }
-
     }
 
     gettimeofday(&time2, NULL);
-    /*
+
     // print final weights after done training
     fputs ("\nFinal Hidden Weights\n[ ", stdout);
     for(int j = 0; j < numHiddenNodes; j++){
@@ -372,7 +375,7 @@ int main() {
     }
 
     fputs("] \n", stdout);
-*/
+
 
     // Building neural network with the trained weights and bias
     // initialize testInput and testResults
