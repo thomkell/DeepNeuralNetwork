@@ -86,7 +86,7 @@ int main() {
     double inputTest[numTrain][31];
 
     // read Train data from train_data.csv
-    FILE *fstream = fopen("/Users/thomaskeller/CLionProjects/COMP605_serial2/train_data.csv", "r");
+    FILE *fstream = fopen("train_data.csv", "r");
     if (fstream == NULL) {
         printf("\n file opening failed train ");
         return -1;
@@ -106,7 +106,7 @@ int main() {
     i = 0, j = 0;
 
     // read Test data from test_data.csv
-    FILE *gstream = fopen("/Users/thomaskeller/CLionProjects/COMP605_serial2/test_data.csv", "r");
+    FILE *gstream = fopen("test_data.csv", "r");
     if (gstream == NULL) {
         printf("\n file opening failed test ");
         return -1;
