@@ -1,18 +1,12 @@
-// Neural Network serial code
+// Neural Network serial code, v2.0
 // Anu, Thomas, Zack
-
-// Stochatic smoething for back propagation
-// hypotetical prediction ask dumett
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
-#include "evaluation.h"
 #include <time.h>
 #include <sys/time.h>
-
-#define MAX(a,b) (((a)>(b))?(a):(b))           // macro to find maximum of two numbers
+#include "evaluation.h"
 
 #define learningRate 0.0001f                    // defining a constant for learning rate
 
@@ -40,7 +34,7 @@ double initWeights() {
 // random shuffle data
 void shuffle(int *array, size_t n){
     // Initializes random number generator
-    srand(45);
+    srand(44);
 
     if (n > 1){
         size_t i;
@@ -57,6 +51,8 @@ void shuffle(int *array, size_t n){
 #define numHiddenNodes 30          // number of nodes in the first hidden layer
 #define numHiddenNodes2 30         // number of nodes in the second hidden layer
 #define numOutputs 1               // number of outputs
+#define numTrain 455
+#define numTest 114
 #define numTrainingSets 569        // number of instances of total data
 
 int main() {
@@ -79,103 +75,94 @@ int main() {
     double hiddenWeights2[numInputs][numHiddenNodes2];
     double outputWeights[numHiddenNodes2][numOutputs];
 
-    // read data from data.csv
-    char buffer[1024] ;
-    char *record,*line;
-    int i=0,j=0;
-    double inputCSV[1000][31];
 
-    // read input data from a csv
-    FILE *fstream = fopen("/Users/thomaskeller/CLionProjects/COMP605/dataALL_N1.csv", "r");
-    if(fstream == NULL)
-    {
-        printf("\n file opening failed ");
-        return -1 ;
+    // read data from inputTrain.csv
+    char buffer[1024];
+    char buffer2[1024];
+    char *record, *line;
+    char *record2, *line2;
+    int i = 0, j = 0;
+    double inputTrain[numTrain][31];
+    double inputTest[numTrain][31];
+
+    // read Train data from train_data.csv
+    FILE *fstream = fopen("/Users/thomaskeller/CLionProjects/COMP605_serial2/train_data.csv", "r");
+    if (fstream == NULL) {
+        printf("\n file opening failed train ");
+        return -1;
     }
-    while((line=fgets(buffer,sizeof(buffer),fstream))!=NULL)
-    {
-        record = strtok(line,",");
-        while(record != NULL)
-        {
-            inputCSV[i][j++] = strtod(record,NULL) ;
-            record = strtok(NULL,",");
+    while ((line = fgets(buffer, sizeof(buffer), fstream)) != NULL) {
+        record = strtok(line, ",");
+        while (record != NULL) {
+            inputTrain[i][j++] = strtod(record, NULL);
+            record = strtok(NULL, ",");
         }
-        if(j == 30)
-            i+=1;
+        if (j == 30)
+            i += 1;
     }
 
-    // split data
-    double percentTrain = 0.8f;                     // 80 percent
-    int trainingSetOrderSplit[569];
+    fclose(fstream);
 
-    // creating a vector to shuffle the data
-    for(int i = 0 ; i < 569 ; i++)
-    {
-        trainingSetOrderSplit[i] = i;
+    i = 0, j = 0;
+
+    // read Test data from test_data.csv
+    FILE *gstream = fopen("/Users/thomaskeller/CLionProjects/COMP605_serial2/test_data.csv", "r");
+    if (gstream == NULL) {
+        printf("\n file opening failed test ");
+        return -1;
+    }
+    while ((line2 = fgets(buffer2, sizeof(buffer2), gstream)) != NULL) {
+        record2 = strtok(line2, ",");
+        //printf("%s ", record2);
+        while (record2 != NULL) {
+            inputTest[i][j++] = strtod(record2, NULL);
+            record2 = strtok(NULL, ",");
+        }
+        if (j == 30)
+            i += 1;
     }
 
-    // shuffle complete data
-    shuffle(trainingSetOrderSplit, numTrainingSets);
-
-    // splitting into training and test data
-    int cutOffTrain = (int) ceil(numTrainingSets * percentTrain);
-    int newTrainingSetOrder[cutOffTrain];
-    int cutOffTest = numTrainingSets - cutOffTrain;
-    int newTestingSetOrder[cutOffTest];
-
-    // finding the indices to populate the order for training
-    for (int i = 0; i < cutOffTrain; i++){
-        newTrainingSetOrder[i] = trainingSetOrderSplit[i];
-    }
-
-    // finding the indices to populate the order for testing
-    for (int i = cutOffTrain; i < numTrainingSets; i++){
-        newTestingSetOrder[i-cutOffTrain] = trainingSetOrderSplit[i];
-    }
+    fclose(gstream);
 
     // training data (inputs)
-    double trainingInputs[cutOffTrain][numInputs];
+    double trainingInputs[numTrain][numInputs];
 
-    for (int ro=0; ro<cutOffTrain; ro++)
+    for (int ro=0; ro<numTrain; ro++)
     {
         for(int columns=1; columns<31; columns++)
         {
-            int row = newTrainingSetOrder[ro];
-            trainingInputs[ro][columns-1] = inputCSV[row][columns];
+            trainingInputs[ro][columns-1] = inputTrain[ro][columns];
         }
     }
 
     // testing data (inputs)
-    double testingInputs[cutOffTest][numInputs];
+    double testingInputs[numTest][numInputs];
 
-    for (int ro=0; ro<cutOffTest; ro++)
+    for (int ro=0; ro<numTest; ro++)
     {
         for(int columns=1; columns<31; columns++)
         {
-            int rowX = newTestingSetOrder[ro];
-            testingInputs[ro][columns-1] = inputCSV[rowX][columns];
+            testingInputs[ro][columns-1] = inputTest[ro][columns];
         }
     }
 
     // training data (outputs)
-    double trainingOutputs[cutOffTrain][numOutputs];
-    for (int ro=0; ro<cutOffTrain; ro++)
+    double trainingOutputs[numTrain][numOutputs];
+    for (int ro=0; ro<numTrain; ro++)
     {
         for(int columns=0; columns<1; columns++)
         {
-            int row = newTrainingSetOrder[ro];
-            trainingOutputs[ro][columns] = inputCSV[row][columns];
+            trainingOutputs[ro][columns] = inputTrain[ro][columns];
         }
     }
 
     // testing data (outputs)
-    double testingOutputs[cutOffTest];
-    for (int ro=0; ro<cutOffTest; ro++)
+    double testingOutputs[numTest];
+    for (int ro=0; ro<numTest; ro++)
     {
         for(int columns=0; columns<1; columns++)
         {
-            int row = newTestingSetOrder[ro];
-            testingOutputs[ro] = inputCSV[row][columns];
+            testingOutputs[ro] = inputTest[ro][columns];
         }
     }
 
@@ -210,17 +197,16 @@ int main() {
             outputWeights[i][j] = initWeights();
         }
     }
+
     // specify training set
-    int trainingSetOrder[cutOffTrain];
-    for(int i = 0 ; i < cutOffTrain ; i++)
+    int trainingSetOrder[numTrain];
+    for(int i = 0 ; i < numTrain ; i++)
     {
         trainingSetOrder[i] = i;
     }
 
-    // shuffling training set
-    shuffle(trainingSetOrder, cutOffTrain);
 
-    int numberOfEpochs = 100;                            // number of epochs
+    int numberOfEpochs = 1500;                            // number of epochs
 
     // start time measurement
     struct timeval time1, time2;
@@ -229,9 +215,9 @@ int main() {
     //training loop
     for(int epoch = 0; epoch < numberOfEpochs; epoch++){
 
-        shuffle(trainingSetOrder, cutOffTrain);
+        shuffle(trainingSetOrder, numTrain);
 
-        for(int x = 0; x < cutOffTrain; x ++){
+        for(int x = 0; x < numTrain; x ++){
             int i = trainingSetOrder[x];
 
             // forward pass
@@ -270,9 +256,10 @@ int main() {
                 outputLayer[j] = sigmoid(activation);
             }
 
-            printf("Input: %g | %g | %g | %g | %g | %g |      Output: %g      Expected Output: %g \n",
-                   trainingInputs[i][1], trainingInputs[i][2], trainingInputs[i][3], trainingInputs[i][4], trainingInputs[i][5], trainingInputs[i][6],
-                   outputLayer[0], trainingOutputs[i][0]);
+            // print training output
+            //printf("Input: %g | %g | %g | %g | %g | %g |      Output: %g      Expected Output: %g \n",
+            //       trainingInputs[i][1], trainingInputs[i][2], trainingInputs[i][3], trainingInputs[i][4], trainingInputs[i][5], trainingInputs[i][6],
+            //       outputLayer[0], trainingOutputs[i][0]);
 
             // Backpropagation
             // Compute change in output weights
@@ -379,29 +366,32 @@ int main() {
 
     // Building neural network with the trained weights and bias
     // initialize testInput and testResults
-    double testInput[cutOffTest];
-    double testResults[cutOffTest];
+    double testInput[numTest];
+    double testResults[numTest];
 
     // looping through the matrix and sending in one vector at a time to evaluate
-    for(int i = 0; i < cutOffTest; i++)
-    {
-        for(int j = 0; j < numInputs; j++) {
+    for(int i = 0; i < numTest; i++) {
+        for (int j = 0; j < numInputs; j++) {
             testInput[j] = testingInputs[i][j];
         }
+
+
         // predicted solution
         testResults[i] = evaluation(numInputs, numHiddenNodes, numHiddenNodes2, numOutputs,
                                     testInput,hiddenWeights,hiddenWeights2,outputWeights,hiddenLayerBias,hiddenLayerBias2,outputLayerBias);
-        printf("predicted results: %f actual result: %f \n", testResults[i], testingOutputs[i]);
+        printf("predicted results: %f   actual result: %f \n", testResults[i], testingOutputs[i]);
     }
 
-    accuracy(testResults,testingOutputs,cutOffTest);             // accuracy, precision, fscore
+    accuracy(testResults,testingOutputs,numTest);             // accuracy, precision, fscore
 
-    double totalTime;
     // calculate total time in ms
-    totalTime = (time2.tv_sec - time1.tv_sec);      // s
-    totalTime += (time2.tv_usec - time1.tv_usec)/1E6;
+    double totalTime;
+    totalTime = (time2.tv_sec - time1.tv_sec);  // s
+    totalTime += (time2.tv_usec - time1.tv_usec)/1E6; // ms
 
-    printf("Total time: %fs \n", totalTime);                      // time
+    printf("Total time: %fs \n", totalTime);  // time
 
     return 0;
+
 }
+
