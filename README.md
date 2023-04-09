@@ -7,5 +7,8 @@ https://www.kaggle.com/datasets/uciml/breast-cancer-wisconsin-data?resource=down
 ## Code based on example:
 https://github.com/niconielsen32
 
+## Compared to
+https://github.com/nihil21/parallel_nn
+
 ## Licence:
 MIT
