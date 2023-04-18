@@ -252,17 +252,12 @@ int main() {
     }
 
     // specify training set
-    int trainingSetOrder[numTrain];
+    int *trainingSetOrder = (int *)malloc(numTrain * sizeof(int));
     for(int i = 0 ; i < numTrain ; i++)
     {
         trainingSetOrder[i] = i;
     }
 
-    // shuffling training set
-    // shuffle(trainingSetOrder, cutOffTrain);
-
-
-    // int numberOfEpochs = 1500;                            // number of epochs
 
     // start time measurement
     clock_t start, end;
@@ -321,7 +316,7 @@ int main() {
 
             // Backpropagation
             // Compute change in output weights
-            double deltaOutput[numOutputs];
+            double *deltaOutput = (double *)malloc(numOutputs * sizeof(double));
             #pragma omp parallel for num_threads(thread_count) shared(deltaOutput, trainingOutputs, outputLayer) private(j)
             for(int j = 0; j < numOutputs; j++){
                 double error = (trainingOutputs[i][j] - outputLayer[j]); // L1
@@ -331,7 +326,7 @@ int main() {
             }
 
             // Compute change in hidden weights (second layer)
-            double deltaHidden2[numHiddenNodes2];
+            double *deltaHidden2 = (double *)malloc(numHiddenNodes2 * sizeof(double));
             #pragma omp parallel for num_threads(thread_count) shared(deltaHidden2, deltaOutput, outputWeights, hiddenLayer, hiddenLayer2) private(j, k)
             for(int j = 0; j < numHiddenNodes2; j++){
                 double error = 0.0f;
@@ -342,7 +337,7 @@ int main() {
             }
 
             // Compute change in hidden weights (first layer)
-            double deltaHidden[numHiddenNodes];
+            double *deltaHidden = (double *)malloc(numHiddenNodes * sizeof(double));
             #pragma omp parallel for num_threads(thread_count) shared(deltaHidden, deltaHidden2, hiddenWeights2, hiddenLayer, hiddenLayerBias2) private(j, k)
             for(int j = 0; j < numHiddenNodes; j++){
                 double error = 0.0f;
@@ -378,6 +373,10 @@ int main() {
                     hiddenWeights[k][j] += trainingInputs[i][k] * deltaHidden[j] * lr;
                 }
             }
+            free(deltaHidden);
+            free(deltaHidden2);
+            free(deltaOutput);
+
         }
     }
 
@@ -430,9 +429,8 @@ int main() {
 
     // Building neural network with the trained weights and bias
     // initialize testInput and testResults
-    double testInput[numTest];
-    double testResults[numTest];
-
+    double *testInput = (double *)malloc(numTest * sizeof(double));
+    double *testResults = (double *)malloc(numTest * sizeof(double));
     // looping through the matrix and sending in one vector at a time to evaluate
     #pragma omp parallel for num_threads(thread_count) shared(testInput, testResults) private(j)
     for(int i = 0; i < numTest; i++) {
@@ -474,7 +472,9 @@ int main() {
     free(hiddenWeights);
     free(hiddenWeights2);
     free(outputWeights);
-
+    free(trainingSetOrder);
+    free(testInput);
+    free(testResults);
 
     // Free dynamically allocated memory for training and testing inputs and outputs
     for (int i = 0; i < numTrain; i++) {
