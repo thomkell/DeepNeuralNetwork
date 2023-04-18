@@ -1,4 +1,3 @@
-
 // Neural Network serial code, v2.0
 // Anu, Thomas, Zack
 
@@ -9,7 +8,7 @@
 #include "evaluation.h"
 
 #define learningRate 0.0001f                    // defining a constant for learning rate
-#define numberOfEpochs 1500                     // number of epochs 1500
+#define numberOfEpochs 5                       // number of epochs 1500
 
 //double sigmoid(double x) { return 1/(1+exp(-x)); } //forward propagation
 double dSigmoid(double x) {
@@ -48,9 +47,9 @@ void shuffle(int *array, size_t n){
     }
 }
 
-#define numInputs 600               // number of columns
-#define numHiddenNodes 600          // number of nodes in the first hidden layer
-#define numHiddenNodes2 600         // number of nodes in the second hidden layer
+#define numInputs 2400               // number of columns
+#define numHiddenNodes 2400          // number of nodes in the first hidden layer
+#define numHiddenNodes2 2400         // number of nodes in the second hidden layer
 #define numOutputs 1                // number of outputs
 #define numTrain 455
 #define numTest 114
@@ -131,16 +130,16 @@ int main() {
     double outputWeights[numHiddenNodes2][numOutputs];
     */
     // read data from inputTrain.csv
-    char buffer[202400];
-    char buffer2[202400];
+    char buffer[802400];
+    char buffer2[802400];
     char *record, *line;
     char *record2, *line2;
     int i = 0, j = 0;
-    double inputTrain[numTrain][601];
-    double inputTest[numTrain][601];
+    double inputTrain[numTrain][2401];
+    double inputTest[numTrain][2401];
 
     // read Train data from train_data.csv
-    FILE *fstream = fopen("train_data601.csv", "r");
+    FILE *fstream = fopen("train_data2401.csv", "r");
     if (fstream == NULL) {
         printf("\n file opening failed train ");
         return -1;
@@ -151,7 +150,7 @@ int main() {
             inputTrain[i][j++] = strtod(record, NULL);
             record = strtok(NULL, ",");
         }
-        if (j == 600)
+        if (j == 2400)
             i += 1;
     }
 
@@ -160,7 +159,7 @@ int main() {
     i = 0, j = 0;
 
     // read Test data from test_data.csv
-    FILE *gstream = fopen("test_data601.csv", "r");
+    FILE *gstream = fopen("test_data2401.csv", "r");
     if (gstream == NULL) {
         printf("\n file opening failed test ");
         return -1;
@@ -172,7 +171,7 @@ int main() {
             inputTest[i][j++] = strtod(record2, NULL);
             record2 = strtok(NULL, ",");
         }
-        if (j == 600)
+        if (j == 2400)
             i += 1;
     }
 
@@ -183,7 +182,7 @@ int main() {
 
     for (int ro=0; ro<numTrain; ro++)
     {
-        for(int columns=1; columns<601; columns++)
+        for(int columns=1; columns<2401; columns++)
         {
             trainingInputs[ro][columns-1] = inputTrain[ro][columns];
         }
@@ -194,7 +193,7 @@ int main() {
 
     for (int ro=0; ro<numTest; ro++)
     {
-        for(int columns=1; columns<601; columns++)
+        for(int columns=1; columns<2401; columns++)
         {
             testingInputs[ro][columns-1] = inputTest[ro][columns];
         }
@@ -372,6 +371,7 @@ int main() {
 
     end = clock();
 
+/*
     // print final weights after done training
     fputs ("\nFinal Hidden Weights\n[ ", stdout);
     for(int j = 0; j < numHiddenNodes; j++){
@@ -415,7 +415,7 @@ int main() {
     }
 
     fputs("] \n", stdout);
-
+*/
 
     // Building neural network with the trained weights and bias
     // initialize testInput and testResults
