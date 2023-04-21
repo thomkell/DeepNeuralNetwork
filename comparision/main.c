@@ -225,6 +225,8 @@ int main() {
     }
 
     end = clock();
+    double duration = ((double)end - start)/CLOCKS_PER_SEC;
+    printf("Total time: %fs \n", duration);  // time
 
 /*
     // print final weights after done training
