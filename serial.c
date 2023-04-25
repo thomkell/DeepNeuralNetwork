@@ -1,4 +1,4 @@
-// Neural Network serial code, v2.0
+// Neural Network serial code
 // Anu, Thomas, Zack
 
 #include <stdio.h>
@@ -7,60 +7,53 @@
 #include <time.h>
 #include "evaluation.h"
 
-#define learningRate 0.0001f                    // defining a constant for learning rate
-#define numberOfEpochs 1                       // number of epochs 1500
+int numInputs;
+int numHiddenNodes;
+int numHiddenNodes2;
+double learningRate;
+int numberOfEpochs; 
 
-//double sigmoid(double x) { return 1/(1+exp(-x)); } //forward propagation
-double dSigmoid(double x) {
-    return sigmoid(x) * (1 - sigmoid(x));      // derivative of sigmoid for backpropagation
-}
-
-//double relu(double x) { return MAX(x,0) ;}
-double dRelu(double x) {
-    if(x<0)
-    {
-        return 0;                              // derivative of ReLU for backpropagation
-    }
-    else
-    {
-        return 1;
-    }
-}
-
-double initWeights() {
-    return ((double)rand()) / ((double)RAND_MAX);  // function to initialize weights
-}
-
-// random shuffle data
-void shuffle(int *array, size_t n){
-    // Initializes random number generator
-    srand(44);
-
-    if (n > 1){
-        size_t i;
-        for(i = 0; i < n-1; i++){
-            size_t j = i + rand() / (RAND_MAX / (n - i) + 1);  // generate a random index to swap with
-            int temp = array[j];                               // creating a temporary variable
-            array[j] = array[i];                               // updating the values
-            array[i] = temp;                                   // swapping the elements
-        }
-    }
-}
-
-#define numInputs 4800               // number of columns
-#define numHiddenNodes 4800          // number of nodes in the first hidden layer
-#define numHiddenNodes2 4800         // number of nodes in the second hidden layer
-#define numOutputs 1                // number of outputs
+#define numOutputs 1                        // Number of outputs
 #define numTrain 455
 #define numTest 114
-#define numTrainingSets 569        // number of instances of total data
+#define numTrainingSets 569                 // Number of instances of total data
 
-int main() {
+int main(int argc, char *argv[]) {
 
-    // learning rate
+    if (argc != 4){
+        printf("Please provide number of inputs as your first argument, learning rate as your second argument and number of epochs as your third argument. \n");
+        exit(1);
+    }
+
+    numInputs = atoi(argv[1]);             // Number of columns
+    numHiddenNodes = atoi(argv[1]);        // Number of nodes in the first hidden layer
+    numHiddenNodes2 = atoi(argv[1]);       // Number of nodes in the second hidden layer
+    learningRate = atof(argv[2]);          // Constant for learning rate
+    numberOfEpochs = atoi(argv[3]);        // Number of epochs
+
+    char training_set[30];
+    char testing_set[30];
+    int characters;
+
+    if (numInputs == 30){
+        strncpy(training_set, "train_data.csv", sizeof(training_set));
+        strncpy(testing_set, "test_data.csv", sizeof(testing_set));
+        characters = 1024;
+    }
+    else if (numInputs == 4800){
+        strncpy(training_set, "train_data4801.csv", sizeof(training_set));
+        strncpy(testing_set, "test_data4801.csv", sizeof(testing_set));
+        characters = 1602400;
+    }
+    else{
+        printf("Please make sure your first argument is either 30 or 4800. \n");
+        exit(2);
+    }
+
+    // Learning rate
     const double lr = learningRate;
 
-        // Declare pointers for dynamically allocated arrays
+    // Declare pointers for dynamically allocated arrays
     double* hiddenLayer;
     double* hiddenLayer2;
     double* outputLayer;
@@ -113,33 +106,17 @@ int main() {
 
     double *testingOutputs = (double *)malloc(numTest * sizeof(double));
 
-    /*
-    // initializing hidden and output layer nodes vectors
-    double hiddenLayer[numHiddenNodes];
-    double hiddenLayer2[numHiddenNodes2];
-    double outputLayer[numOutputs];
-
-    // initializing hidden and output layer bias vectors
-    double hiddenLayerBias[numHiddenNodes];
-    double hiddenLayerBias2[numHiddenNodes2];
-    double outputLayerBias[numOutputs];
-
-    // initializing hidden and output weights matrices
-    double hiddenWeights[numInputs][numHiddenNodes];
-    double hiddenWeights2[numInputs][numHiddenNodes2];
-    double outputWeights[numHiddenNodes2][numOutputs];
-    */
-    // read data from inputTrain.csv
-    char buffer[1602400];
-    char buffer2[1602400];
+   
+    char buffer[characters];
+    char buffer2[characters];
     char *record, *line;
     char *record2, *line2;
     int i = 0, j = 0;
     double inputTrain[numTrain][numInputs+1];
     double inputTest[numTrain][numInputs+1];
 
-    // read Train data from train_data.csv
-    FILE *fstream = fopen("train_data4801.csv", "r");
+    // Read Train data from train_data.csv
+    FILE *fstream = fopen(training_set, "r");
     if (fstream == NULL) {
         printf("\n file opening failed train ");
         return -1;
@@ -158,15 +135,14 @@ int main() {
 
     i = 0, j = 0;
 
-    // read Test data from test_data.csv
-    FILE *gstream = fopen("test_data4801.csv", "r");
+    // Read Test data from test_data.csv
+    FILE *gstream = fopen(testing_set, "r");
     if (gstream == NULL) {
         printf("\n file opening failed test ");
         return -1;
     }
     while ((line2 = fgets(buffer2, sizeof(buffer2), gstream)) != NULL) {
         record2 = strtok(line2, ",");
-        //printf("%s ", record2);
         while (record2 != NULL) {
             inputTest[i][j++] = strtod(record2, NULL);
             record2 = strtok(NULL, ",");
@@ -177,9 +153,7 @@ int main() {
 
     fclose(gstream);
 
-    // training data (inputs)
-    // double trainingInputs[numTrain][numInputs];
-
+    // Training data (inputs)
     for (int ro=0; ro<numTrain; ro++)
     {
         for(int columns=1; columns<numInputs+1; columns++)
@@ -188,9 +162,7 @@ int main() {
         }
     }
 
-    // testing data (inputs)
-    // double testingInputs[numTest][numInputs];
-
+    // Testing data (inputs)
     for (int ro=0; ro<numTest; ro++)
     {
         for(int columns=1; columns<numInputs+1; columns++)
@@ -199,8 +171,7 @@ int main() {
         }
     }
 
-    // training data (outputs)
-    // double trainingOutputs[numTrain][numOutputs];
+    // Training data (outputs)
     for (int ro=0; ro<numTrain; ro++)
     {
         for(int columns=0; columns<1; columns++)
@@ -209,62 +180,59 @@ int main() {
         }
     }
 
-    // testing data (outputs)
-    // double testingOutputs[numTest];
+    // Testing data (outputs)
     for (int ro=0; ro<numTest; ro++)
     {
         for(int columns=0; columns<1; columns++)
         {
             testingOutputs[ro] = inputTest[ro][columns];
-            printf("%f", testingOutputs[ro]);
         }
     }
 
-    // initialize bias and weight terms to random
-    // hidden layer 1 weights
+    // Initialize bias and weight terms to random
+    // Hidden layer 1 weights
     for(int i = 0; i < numHiddenNodes; i++){
         hiddenLayerBias[i] = initWeights();
     }
-    // hidden layer 2 weights
+    // Hidden layer 2 weights
     for(int i = 0; i < numHiddenNodes2; i++){
         hiddenLayerBias2[i] = initWeights();
     }
-    // output layer weights
+    // Output layer weights
     for(int i = 0; i < numOutputs; i++){
         outputLayerBias[i] = initWeights();
     }
-    // hidden layer 1 bias
+    // Hidden layer 1 bias
     for(int i = 0; i < numInputs; i++){
         for(int j = 0; j < numHiddenNodes; j++){
             hiddenWeights[i][j] = initWeights();
         }
     }
-    // hidden layer 2 bias
+    // Hidden layer 2 bias
     for(int i = 0; i < numHiddenNodes; i++){
         for(int j = 0; j < numHiddenNodes2; j++){
             hiddenWeights2[i][j] = initWeights();
         }
     }
-    // output layer bias
+    // Output layer bias
     for(int i = 0 ; i < numHiddenNodes; i++){
         for(int j = 0; j < numOutputs; j++){
             outputWeights[i][j] = initWeights();
         }
     }
 
-    // specify training set
+    // Specify training set
     int trainingSetOrder[numTrain];
     for(int i = 0 ; i < numTrain ; i++)
     {
         trainingSetOrder[i] = i;
     }
 
-
-    // start time measurement
+    // Start time measurement
     clock_t start, end;
     start = clock();
 
-    //training loop
+    // Training loop
     for(int epoch = 0; epoch < numberOfEpochs; epoch++){
 
         shuffle(trainingSetOrder, numTrain);
@@ -272,9 +240,7 @@ int main() {
         for(int x = 0; x < numTrain; x ++){
             int i = trainingSetOrder[x];
 
-            // forward pass
-            // compute hidden layer activation
-
+            // forward pass: compute hidden layer activation
             // hidden layer 1
             for(int j =0; j < numHiddenNodes; j++){
                 double activation = hiddenLayerBias[j];
@@ -308,7 +274,7 @@ int main() {
                 outputLayer[j] = sigmoid(activation);
             }
 
-            // print training output
+            // Print training output
             printf("Input: %g | %g | %g | %g | %g | %g |      Output: %g      Expected Output: %g \n",
                    trainingInputs[i][1], trainingInputs[i][2], trainingInputs[i][3], trainingInputs[i][4], trainingInputs[i][5], trainingInputs[i][6],
                    outputLayer[0], trainingOutputs[i][0]);
@@ -318,8 +284,6 @@ int main() {
             double deltaOutput[numOutputs];
             for(int j = 0; j < numOutputs; j++){
                 double error = (trainingOutputs[i][j] - outputLayer[j]); // L1
-                //double error = -((outputLayer[j] * log(trainingOutputs[i][j])) + ((1-outputLayer[j]) * log(trainingOutputs[i][j]))); // cross entropy
-                //double error = (1/numOutputs)*(pow(trainingOutputs[i][j] - outputLayer[j],2)); // MSE
                 deltaOutput[j] = error * dSigmoid(outputLayer[j]) ;
             }
 
@@ -427,8 +391,6 @@ int main() {
         for (int j = 0; j < numInputs; j++) {
             testInput[j] = testingInputs[i][j];
         }
-
-
         // predicted solution
         testResults[i] = evaluation(numInputs, numHiddenNodes, numHiddenNodes2, numOutputs,
                                     testInput,hiddenWeights,hiddenWeights2,outputWeights,hiddenLayerBias,hiddenLayerBias2,outputLayerBias);
@@ -442,9 +404,6 @@ int main() {
 
     printf("Total time: %fs \n", duration);  // time
 
-
-    // Now you can access and use the dynamically allocated arrays like regular arrays
-    // Don't forget to free the dynamically allocated memory when you're done using it
     for (int i = 0; i < numInputs; i++) {
         free(hiddenWeights[i]);
         free(hiddenWeights2[i]);
@@ -463,7 +422,6 @@ int main() {
     free(hiddenWeights);
     free(hiddenWeights2);
     free(outputWeights);
-
 
     // Free dynamically allocated memory for training and testing inputs and outputs
     for (int i = 0; i < numTrain; i++) {
