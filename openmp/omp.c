@@ -20,6 +20,11 @@
 #define numTrainingSets 569          // number of instances of total data
 
 int main(int argc, char *argv[]) {
+	
+     if (argc != 2){
+        printf("Please provide number of threads as your first argument. \n");
+        exit(1);
+    }
 
     // learning rate
     const double lr = learningRate;
