@@ -1,15 +1,52 @@
-// evaluation for main.c
+// Evaluation for main.c
+// Anu, Thomas and Zack
 
 #include <math.h>
+#define MAX(a,b) (((a)>(b))?(a):(b))           // Macro to find maximum of two numbers
 
-#define MAX(a,b) (((a)>(b))?(a):(b))           // macro to find maximum of two numbers
-
+// Sigmoid activation function
 double sigmoid(double x) {
     return 1 / (1 + exp(-x));
 }
 
-// relu activation function
+// Relu activation function
 double relu(double x) { return MAX(x,0) ;}
+
+// Derivative of sigmoid for backpropagation
+double dSigmoid(double x) {
+    return sigmoid(x) * (1 - sigmoid(x));     
+}
+
+// Derivative of sigmoid for backpropagation
+double dRelu(double x) {
+    if(x<0)
+    {
+        return 0;                              
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+// Function to initialize weights
+double initWeights() {
+    return ((double)rand()) / ((double)RAND_MAX);  
+}
+
+// Random shuffle data
+void shuffle(int *array, size_t n){
+    srand(44);
+    if (n > 1){
+        size_t i;
+        for(i = 0; i < n-1; i++){
+            size_t j = i + rand() / (RAND_MAX / (n - i) + 1);  // generate a random index to swap with
+            int temp = array[j];                               // creating a temporary variable
+            array[j] = array[i];                               // updating the values
+            array[i] = temp;                                   // swapping the elements
+        }
+    }
+}
 
 // double evaluation(int numInputs, int numHiddenNodes, int numHiddenNodes2, int numOutputs, double inputs[numInputs], double hiddenWeights[numInputs][numHiddenNodes], double hiddenWeights2[numHiddenNodes][numHiddenNodes2], double outputWeights[numHiddenNodes2][numOutputs], double hiddenLayerBias[numHiddenNodes], double hiddenLayerBias2[numHiddenNodes2], double outputLayerBias[numOutputs]){
 double evaluation(int numInputs, int numHiddenNodes, int numHiddenNodes2, int numOutputs, double* inputs, double** hiddenWeights, double** hiddenWeights2, double** outputWeights, double* hiddenLayerBias, double* hiddenLayerBias2, double* outputLayerBias){
