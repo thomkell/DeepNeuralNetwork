@@ -40,13 +40,13 @@ int main(int argc, char *argv[]) {
 
     // Updating variables depending on the command line arguments 
     if (numInputs == 30){
-        strncpy(training_set, "train_data.csv", sizeof(training_set));
-        strncpy(testing_set, "test_data.csv", sizeof(testing_set));
+        strncpy(training_set, "datasets/train_data.csv", sizeof(training_set));
+        strncpy(testing_set, "datasets/test_data.csv", sizeof(testing_set));
         characters = 1024;
     }
     else if (numInputs == 4800){
-        strncpy(training_set, "train_data4801.csv", sizeof(training_set));
-        strncpy(testing_set, "test_data4801.csv", sizeof(testing_set));
+        strncpy(training_set, "datasets/train_data4801.csv", sizeof(training_set));
+        strncpy(testing_set, "datasets/test_data4801.csv", sizeof(testing_set));
         characters = 1602400;
     }
     else{
