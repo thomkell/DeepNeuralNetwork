@@ -7,3 +7,14 @@ This folder contains the code used to parallelize the deep neural network using 
 - test_data4801.csv: test data with 4800 inputs
 - train_data4801.csv: train data with 4800 inputs 
 
+# How to run
+There is 1 command line argument: number of threads
+- How to compile:
+```
+   	gcc -o main main.c -lm -fopenmp
+```
+- How to run:
+
+```
+   	./main <numberofThreads>
+```
