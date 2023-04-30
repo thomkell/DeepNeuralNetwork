@@ -1,4 +1,5 @@
 ## comparision folder 
+## Names: Anuradha Agarwal, Thomas Keller, Zack Humphries 
 
 This folder contains the code used to compare the results from literature review. The following are the files present in the folder:
 - main.c: serial code
