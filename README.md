@@ -1,11 +1,9 @@
 # Deep Neural Network in C with 2 layers
-Code written by: Anu, Thomas, Zack
+## Class: COMP 605: Scientific Computing
+## Names: Anuradha Agarwal, Thomas Keller, Zack Humphries 
 
-# Dataset
+# Dataset Used
 https://www.kaggle.com/datasets/uciml/breast-cancer-wisconsin-data?resource=download
-
-## Code based on example:
-https://github.com/niconielsen32
 
 ## Compared to
 https://github.com/nihil21/parallel_nn
