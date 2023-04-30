@@ -4,9 +4,6 @@ Code written by: Anu, Thomas, Zack
 # Dataset
 https://www.kaggle.com/datasets/uciml/breast-cancer-wisconsin-data?resource=download
 
-## Code based on example:
-https://github.com/niconielsen32
-
 ## Compared to
 https://github.com/nihil21/parallel_nn
 
