@@ -1,5 +1,5 @@
 // Evaluation for main.c
-// Anu, Thomas and Zack
+// Anuradha Agarwal, Thomas Keller, Zack Humphries 
 
 #include <math.h>
 #define MAX(a,b) (((a)>(b))?(a):(b))           // Macro to find maximum of two numbers
