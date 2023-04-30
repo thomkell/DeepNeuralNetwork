@@ -1,6 +1,8 @@
-// Neural Network serial code, v2.0
-// Anu, Thomas, Zack
+// Deep Neural Network OpenMP
+// Names: Anuradha Agarwal, Thomas Keller, Zack Humphries 
+// Class: COMP 605 Scientific computing 
 
+// Importing necessary libraries 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,12 +17,14 @@
 #define numHiddenNodes 4800          // number of nodes in the first hidden layer
 #define numHiddenNodes2 4800         // number of nodes in the second hidden layer
 #define numOutputs 1                 // number of outputs
-#define numTrain 455
-#define numTest 114
+#define numTrain 455                 // number of rows in train data
+#define numTest 114                  // number of rows in test data
 #define numTrainingSets 569          // number of instances of total data
 
+// The main function begins here 
 int main(int argc, char *argv[]) {
 	
+     // checking for the arguments 	
      if (argc != 2){
         printf("Please provide number of threads as your first argument. \n");
         exit(1);
@@ -56,6 +60,8 @@ int main(int argc, char *argv[]) {
     hiddenWeights2 = (double**) malloc(numInputs * sizeof(double*));
     outputWeights = (double**) malloc(numHiddenNodes2 * sizeof(double*));
 
+    // Dynamically allocate memory for all 2d arrays
+
     for (int i = 0; i < numInputs; i++) {
         hiddenWeights[i] = (double*) malloc(numHiddenNodes * sizeof(double));
         hiddenWeights2[i] = (double*) malloc(numHiddenNodes2 * sizeof(double));
@@ -65,7 +71,6 @@ int main(int argc, char *argv[]) {
         outputWeights[i] = (double*) malloc(numOutputs * sizeof(double));
     }
 
-    // Dynamically allocate memory for training and testing inputs and outputs
     double **trainingInputs = (double **)malloc(numTrain * sizeof(double *));
     for (int i = 0; i < numTrain; i++) {
         trainingInputs[i] = (double *)malloc(numInputs * sizeof(double));
@@ -115,8 +120,6 @@ int main(int argc, char *argv[]) {
     i = 0, j = 0;
 
     // read data from inputTrain.csv
-    // read input data from a csv
-
     FILE *gstream = fopen("test_data4801.csv", "r");
     if (gstream == NULL) {
         printf("\n file opening failed test ");
@@ -134,8 +137,6 @@ int main(int argc, char *argv[]) {
     }
 
     // training data (inputs)
-    // double trainingInputs[numTrain][numInputs];
-
     #pragma omp parallel for num_threads(thread_count) collapse(2) shared(trainingInputs, inputTrain)
     for (int ro=0; ro<numTrain; ro++)
     {
@@ -146,8 +147,6 @@ int main(int argc, char *argv[]) {
     }
 
     // testing data (inputs)
-    // double testingInputs[numTest][numInputs];
-
     #pragma omp parallel for num_threads(thread_count) collapse(2) shared(testingInputs, inputTest)
     for (int ro=0; ro<numTest; ro++)
     {
@@ -161,8 +160,6 @@ int main(int argc, char *argv[]) {
     }
 
     // training data (outputs)
-    // double trainingOutputs[numTrain][numOutputs];
-
     #pragma omp parallel for num_threads(thread_count) collapse(2) shared(trainingOutputs, inputTrain)
     for (int ro=0; ro<numTrain; ro++)
     {
@@ -174,8 +171,6 @@ int main(int argc, char *argv[]) {
     }
 
     // testing data (outputs)
-    // double testingOutputs[numTest];
-
     #pragma omp parallel for num_threads(thread_count) shared(testingOutputs, inputTest)
     for (int ro=0; ro<numTest; ro++)
     {
@@ -234,7 +229,6 @@ int main(int argc, char *argv[]) {
     for(int epoch = 0; epoch < numberOfEpochs; epoch++){
 
         shuffle(trainingSetOrder, numTrain);
-	//#pragma omp parallel for num_threads(thread_count)
         for(int x = 0; x < numTrain; x ++){
             int i = trainingSetOrder[x];
 
@@ -244,7 +238,7 @@ int main(int argc, char *argv[]) {
             // hidden layer 1
             int k;
             #pragma omp parallel for num_threads(thread_count)
-	        for(int j =0; j < numHiddenNodes; j++){
+	    for(int j =0; j < numHiddenNodes; j++){
                 double activation = hiddenLayerBias[j];
 
                 for(int k = 0; k < numInputs; k++){
@@ -256,7 +250,7 @@ int main(int argc, char *argv[]) {
 
             // hidden layer 2
             double activation = 0;
-	        #pragma omp parallel for reduction(+:activation) num_threads(thread_count)
+	    #pragma omp parallel for reduction(+:activation) num_threads(thread_count)
             for(int j =0; j < numHiddenNodes2; j++){
                 activation = hiddenLayerBias2[j];
 
@@ -268,7 +262,7 @@ int main(int argc, char *argv[]) {
             }
 
             // compute output layer activation
-	        #pragma omp parallel for reduction(+:activation) num_threads(thread_count)
+	    #pragma omp parallel for reduction(+:activation) num_threads(thread_count)
             for(int j =0; j < numOutputs; j++){
                 activation = outputLayerBias[j];
 
@@ -279,6 +273,7 @@ int main(int argc, char *argv[]) {
                 outputLayer[j] = sigmoid(activation);
             }
 
+	    // printing the first 6 inputs for better readability 
             printf("Input: %g | %g | %g | %g | %g | %g |      Output: %g      Expected Output: %g \n",
                    trainingInputs[i][1], trainingInputs[i][2], trainingInputs[i][3], trainingInputs[i][4], trainingInputs[i][5], trainingInputs[i][6],
                    outputLayer[0], trainingOutputs[i][0]);
@@ -286,9 +281,9 @@ int main(int argc, char *argv[]) {
             // Backpropagation
             // Compute change in output weights
             double deltaOutput[numOutputs];
-            #pragma omp parallel for num_threads(thread_count)// shared(deltaOutput, trainingOutputs, outputLayer) private(j)
+            #pragma omp parallel for num_threads(thread_count)
             for(int j = 0; j < numOutputs; j++){
-                double error = (trainingOutputs[i][j] - outputLayer[j]); // L1
+                double error = (trainingOutputs[i][j] - outputLayer[j]); 
                 deltaOutput[j] = error * dSigmoid(outputLayer[j]) ;
             }
 
