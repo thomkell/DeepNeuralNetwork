@@ -1,5 +1,6 @@
-// Neural Network serial code, v2.0
-// Anu, Thomas, Zack
+// Neural Network OpenMP: for comparision 
+// Contains only Forward propagation 
+// Anuradha Agarwal, Thomas Keller, Zack Humphries 
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,10 +40,10 @@ void shuffle(int *array, size_t n){
 #define numInputs 4800               // number of columns
 #define numHiddenNodes 4800          // number of nodes in the first hidden layer
 #define numHiddenNodes2 4800         // number of nodes in the second hidden layer
-#define numOutputs 1               // number of outputs
+#define numOutputs 1                 // number of outputs
 #define numTrain 455
 #define numTest 114
-#define numTrainingSets 569        // number of instances of total data
+#define numTrainingSets 569          // number of instances of total data
 
 int main(int argc, char *argv[]) {
 
@@ -107,19 +108,8 @@ int main(int argc, char *argv[]) {
         }
     }
  
-
-
+	
     // training data (inputs)
-    for (int ro=0; ro<numTrain; ro++)
-    {
-        for(int columns=1; columns<numInputs+1; columns++)
-        {
-            trainingInputs[ro][columns-1] = inputTrain[ro][columns];
-        }
-    }
-    // training data (inputs)
-    // double trainingInputs[numTrain][numInputs];
-
     #pragma omp parallel for num_threads(thread_count) collapse(2) shared(trainingInputs, inputTrain)
     for (int ro=0; ro<numTrain; ro++)
     {
@@ -131,7 +121,6 @@ int main(int argc, char *argv[]) {
 
 
     // training data (outputs)
-
     #pragma omp parallel for num_threads(thread_count) collapse(2) shared(trainingOutputs, inputTrain)
     for (int ro=0; ro<numTrain; ro++)
     {
@@ -182,13 +171,6 @@ int main(int argc, char *argv[]) {
         trainingSetOrder[i] = i;
     }
 
-    // shuffling training set
-    // shuffle(trainingSetOrder, cutOffTrain);
-
-
-    // int numberOfEpochs = 1500;                            // number of epochs
-
-
     // start time measurement
     double time1, time2;
     time1 = omp_get_wtime();
@@ -206,7 +188,6 @@ int main(int argc, char *argv[]) {
 
             // hidden layer 1
             int k;
-            //#pragma omp parallel for num_threads(thread_count) shared(trainingInputs, hiddenWeights, hiddenLayer, hiddenLayerBias) private(j, k)
             #pragma omp parallel for num_threads(thread_count)
 	    for(int j =0; j < numHiddenNodes; j++){
                 double activation = hiddenLayerBias[j];
@@ -220,8 +201,6 @@ int main(int argc, char *argv[]) {
 
             // hidden layer 2
             double activation = 0;
-	    //#pragma omp parallel for num_threads(thread_count) shared(hiddenLayer, hiddenWeights2, hiddenLayer2, hiddenLayerBias2) private(j, k)
-	    //double activation = 0;
 	    #pragma omp parallel for reduction(+:activation) num_threads(thread_count)
             for(int j =0; j < numHiddenNodes2; j++){
                 activation = hiddenLayerBias2[j];
@@ -234,7 +213,6 @@ int main(int argc, char *argv[]) {
             }
 
             // compute output layer activation
-            //#pragma omp parallel for num_threads(thread_count) shared(hiddenLayer2, outputWeights, outputLayer, outputLayerBias) private(j, k)
 	    #pragma omp parallel for reduction(+:activation) num_threads(thread_count)
             for(int j =0; j < numOutputs; j++){
                 activation = outputLayerBias[j];
@@ -301,7 +279,8 @@ int main(int argc, char *argv[]) {
 
     fputs("] \n", stdout);
 */
-// calculate total time in s
+	
+    // calculate total time in s
     double totalTime;
     totalTime = time2 - time1;
     printf("Total time: %fs \n", totalTime);  // time

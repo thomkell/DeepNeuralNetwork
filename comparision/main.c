@@ -1,4 +1,4 @@
-// Neural Network serial code, v2.0
+// Serial code for comparision 
 // Anu, Thomas, Zack
 
 #include <stdio.h>
@@ -9,7 +9,6 @@
 
 #define learningRate 0.0001f                   // defining a constant for learning rate
 #define numberOfEpochs 1                       // number of epochs 1500
-
 
 double sigmoid(double x) {
     return 1 / (1 + exp(-x));
@@ -39,17 +38,17 @@ void shuffle(int *array, size_t n){
 #define numInputs 4800               // number of columns
 #define numHiddenNodes 4800          // number of nodes in the first hidden layer
 #define numHiddenNodes2 4800         // number of nodes in the second hidden layer
-#define numOutputs 1                // number of outputs
+#define numOutputs 1                 // number of outputs
 #define numTrain 455
 #define numTest 114
-#define numTrainingSets 569        // number of instances of total data
+#define numTrainingSets 569          // number of instances of total data
 
 int main() {
 
     // learning rate
     const double lr = learningRate;
 
-        // Declare pointers for dynamically allocated arrays
+    // Declare pointers for dynamically allocated arrays
     double* hiddenLayer;
     double* hiddenLayer2;
     double* outputLayer;
@@ -118,7 +117,6 @@ int main() {
     }
 
     // training data (outputs)
-    // double trainingOutputs[numTrain][numOutputs];
     for (int ro=0; ro<numTrain; ro++)
     {
         for(int columns=0; columns<1; columns++)

@@ -1,14 +1,16 @@
+// Deep Neural Network parallelized using CUDA
+
+// include necesary libraries 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <omp.h>
 #include <time.h>
 #include <sys/time.h>
 
-#define INPUT_SIZE 30
-#define HIDDEN_SIZE 30
+#define INPUT_SIZE 4800
+#define HIDDEN_SIZE 4800
 #define OUTPUT_SIZE 1
-#define LEARNING_RATE 0.01
+#define LEARNING_RATE 0.0001
 #define NUM_EPOCHS 10
 #define numTrain 455
 
@@ -30,10 +32,8 @@ __device__ double sigmoid(double x) {
     return 1.0 / (1.0 + exp(-x));
 }
 
-
 // Relu activation function
 __device__ double relu(double x) { return MAX(x,0) ;}
-
 
 // Derivative of sigmoid for backpropagation
 __device__ double dSigmoid(double x) {
@@ -51,8 +51,6 @@ __device__ double dRelu(double x) {
         return 1;
     }
 }
-
-
 
 // Forward propagation kernel
 __global__ void forward_kernel(double* X, double* W1, double* W2, double* W3, double* b1, double* b2, double* b3, double* hidden1, double* hidden2, double* output) {
@@ -86,8 +84,6 @@ __global__ void forward_kernel(double* X, double* W1, double* W2, double* W3, do
         *output = sigmoid(sum + b3[0]);
     }
 }
-
-
 
 __global__ void backward_kernel(double* X, double* W1, double* W2, double* W3, double* b1, double* b2, double* b3, double* hidden1, double* hidden2, double* output, double target) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -131,18 +127,16 @@ __global__ void backward_kernel(double* X, double* W1, double* W2, double* W3, d
 }
 
 
-
 int main(int argc, char *argv[]) {
-
 
     double inputTrain[numTrain][INPUT_SIZE+1];
 
-    char buffer[1024];
+    char buffer[160000];
     char *record, *line;
     int i = 0;
     int j = 0;
     // Read Train data from train_data.csv
-    FILE *fstream = fopen("train_data.csv", "r");
+    FILE *fstream = fopen("train_data4801.csv", "r");
     if (fstream == NULL) {
         printf("\n file opening failed train ");
         return -1;
@@ -157,14 +151,11 @@ int main(int argc, char *argv[]) {
             i += 1;
     }
 
-
     double X[numTrain][INPUT_SIZE];
 
     // Initialize input data
-
     for (int i = 0; i < numTrain; i++) {
         for (int j = 1; j < INPUT_SIZE+1 ; j++) {
-            // X[i][j] = ((double) rand() / RAND_MAX) * 2.0 - 1.0;
             X[i][j-1] = inputTrain[i][j];
         }
     }
@@ -177,18 +168,17 @@ int main(int argc, char *argv[]) {
     // Initialize weights
     double *d_W1, *d_W2, *d_W3;
     cudaMalloc(&d_W1, INPUT_SIZE * HIDDEN_SIZE * sizeof(double));
-    cudaMalloc(&d_W2, HIDDEN_SIZE * sizeof(double));
+    cudaMalloc(&d_W2, HIDDEN_SIZE * HIDDEN_SIZE *  sizeof(double));
     cudaMalloc(&d_W3, HIDDEN_SIZE * sizeof(double));
 
     // Initialize weights
     double *d_b1, *d_b2, *d_b3;
     cudaMalloc(&d_b1, HIDDEN_SIZE * sizeof(double));
-    cudaMalloc(&d_b2, OUTPUT_SIZE * sizeof(double));
+    cudaMalloc(&d_b2, HIDDEN_SIZE * sizeof(double));
     cudaMalloc(&d_b3, OUTPUT_SIZE * sizeof(double));
 
-
     double *h_W1 = (double *)malloc(INPUT_SIZE * HIDDEN_SIZE * sizeof(double));
-    double *h_W2 = (double *)malloc(HIDDEN_SIZE * sizeof(double));
+    double *h_W2 = (double *)malloc(HIDDEN_SIZE * HIDDEN_SIZE * sizeof(double));
     double *h_W3 = (double *)malloc(HIDDEN_SIZE * sizeof(double));
 
     for (int i = 0; i < INPUT_SIZE * HIDDEN_SIZE; i++) {
@@ -216,26 +206,19 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < OUTPUT_SIZE; i++) {
         h_b3[i] = (double)rand() / RAND_MAX;
     }
+    
+    
+    struct timeval t1, t2;
+    gettimeofday(&t1, 0);
 
     cudaMemcpy(d_W1, h_W1, INPUT_SIZE * HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_W2, h_W2, HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_W2, h_W2, HIDDEN_SIZE * HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_W3, h_W3, HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b1, h_b1, INPUT_SIZE * HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b1, h_b1, INPUT_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_b2, h_b2, HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_b3, h_b3, HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);
 
-    // Measure time taken for training
-    //cudaEvent_t start, stop;
-    //HANDLE_ERROR(cudaEventCreate(&start));
-    //HANDLE_ERROR(cudaEventCreate(&stop));
-    //HANDLE_ERROR(cudaEventRecord(start,0));
-    //clock_t start_time = clock();
-    //double elapsed_time;
-
-
-
-    struct timeval t1, t2;
-    gettimeofday(&t1, 0);
+   
 
     // Training loop
     for (int epoch = 0; epoch < NUM_EPOCHS; epoch++) {
@@ -257,9 +240,9 @@ int main(int argc, char *argv[]) {
 
     // Copy final weights back to host
     cudaMemcpy(h_W1, d_W1, INPUT_SIZE * HIDDEN_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_W2, d_W2, HIDDEN_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_W2, d_W2, HIDDEN_SIZE * HIDDEN_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_W3, d_W3, HIDDEN_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_b1, d_b1, INPUT_SIZE * HIDDEN_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_b1, d_b1, INPUT_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_b2, d_b2, HIDDEN_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_b3, d_b3, HIDDEN_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
 
@@ -278,18 +261,9 @@ int main(int argc, char *argv[]) {
     }
     printf("\n");
 
-    //HANDLE_ERROR(cudaDeviceSynchronize());
 
     double time = (1000000.0*(t2.tv_sec-t1.tv_sec) + t2.tv_usec-t1.tv_usec)/1000.0;
     printf("Time to generate:  %3.1f ms \n", time);
-
-    // Calculate elapsed time for 
-    //HANDLE_ERROR(cudaEventRecord(stop,0));
-    //HANDLE_ERROR(cudaEventSynchronize(stop));
-    //float elapsed_time;
-    //HANDLE_ERROR(cudaEventElapsedTime(&elapsed_time, start, stop));
-
-    //printf("Training completed in %.4f seconds.\n", elapsed_time);
 
     // Free memory
     cudaFree(d_W1);
@@ -307,4 +281,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-

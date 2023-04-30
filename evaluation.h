@@ -1,5 +1,5 @@
 // Evaluation for main.c
-// Anu, Thomas and Zack
+// Anuradha Agarwal, Thomas Keller, Zack Humphries 
 
 #include <math.h>
 #define MAX(a,b) (((a)>(b))?(a):(b))           // Macro to find maximum of two numbers
@@ -17,7 +17,7 @@ double dSigmoid(double x) {
     return sigmoid(x) * (1 - sigmoid(x));     
 }
 
-// Derivative of sigmoid for backpropagation
+// Derivative of Relu for backpropagation
 double dRelu(double x) {
     if(x<0)
     {
