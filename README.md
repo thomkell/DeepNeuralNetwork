@@ -11,6 +11,18 @@
 - /comparision: contains the forward propagation code used to compare results
 - /CUDA: contains all the files related to CUDA
 
+# How to run serial code
+There are 3 command line arguments: number of inputs(30 or 4800), learning rate, and number of epochs
+- How to compile:
+```
+	gcc -o main main.c -lm
+```
+- How to run: 
+
+```
+	./main <numberofInputs> <learningRate> <numberofEpochs>
+```
+
 # Dataset Used
 https://www.kaggle.com/datasets/uciml/breast-cancer-wisconsin-data?resource=download
 
