@@ -17,7 +17,7 @@ double dSigmoid(double x) {
     return sigmoid(x) * (1 - sigmoid(x));     
 }
 
-// Derivative of sigmoid for backpropagation
+// Derivative of Relu for backpropagation
 double dRelu(double x) {
     if(x<0)
     {
