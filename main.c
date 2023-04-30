@@ -1,5 +1,6 @@
-// Neural Network serial code
-// Anu, Thomas, Zack
+// Deep Neural Network serial code with 2 layers 
+// Names: Anuradha Agarwal, Thomas Keller, Zack Humphries 
+// Final Project
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,12 +15,14 @@ double learningRate;
 int numberOfEpochs; 
 
 #define numOutputs 1                        // Number of outputs
-#define numTrain 455
-#define numTest 114
+#define numTrain 455                        // Number of rows in train set 
+#define numTest 114                         // Number of rows in test set
 #define numTrainingSets 569                 // Number of instances of total data
 
+// The main starts here 
 int main(int argc, char *argv[]) {
 
+    // Checking for command line arguments 
     if (argc != 4){
         printf("Please provide number of inputs as your first argument, learning rate as your second argument and number of epochs as your third argument. \n");
         exit(1);
@@ -31,10 +34,11 @@ int main(int argc, char *argv[]) {
     learningRate = atof(argv[2]);          // Constant for learning rate
     numberOfEpochs = atoi(argv[3]);        // Number of epochs
 
-    char training_set[30];
-    char testing_set[30];
+    char training_set[100];
+    char testing_set[100];
     int characters;
 
+    // Updating variables depending on the command line arguments 
     if (numInputs == 30){
         strncpy(training_set, "train_data.csv", sizeof(training_set));
         strncpy(testing_set, "test_data.csv", sizeof(testing_set));
@@ -78,12 +82,14 @@ int main(int argc, char *argv[]) {
     hiddenWeights = (double**) malloc(numInputs * sizeof(double*));
     hiddenWeights2 = (double**) malloc(numInputs * sizeof(double*));
     outputWeights = (double**) malloc(numHiddenNodes2 * sizeof(double*));
-
+    
+    // Dynamically allocate memory for hiddenWeights and hiddenWeights2
     for (int i = 0; i < numInputs; i++) {
         hiddenWeights[i] = (double*) malloc(numHiddenNodes * sizeof(double));
         hiddenWeights2[i] = (double*) malloc(numHiddenNodes2 * sizeof(double));
     }
 
+    // Dynamically allocate memory for outputWeights
     for (int i = 0; i < numHiddenNodes2; i++) {
         outputWeights[i] = (double*) malloc(numOutputs * sizeof(double));
     }
@@ -93,20 +99,24 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numTrain; i++) {
         trainingInputs[i] = (double *)malloc(numInputs * sizeof(double));
     }
-
+    
+    // Dynamically allocate memory for testingInputs
     double **testingInputs = (double **)malloc(numTest * sizeof(double *));
     for (int i = 0; i < numTest; i++) {
         testingInputs[i] = (double *)malloc(numInputs * sizeof(double));
     }
 
+    // Dynamically allocate memory for trainingInputs
     double **trainingOutputs = (double **)malloc(numTrain * sizeof(double *));
     for (int i = 0; i < numTrain; i++) {
         trainingOutputs[i] = (double *)malloc(numOutputs * sizeof(double));
     }
 
+    // Allocate memory for testingOutputs 
     double *testingOutputs = (double *)malloc(numTest * sizeof(double));
 
    
+    // Reading csv files 
     char buffer[characters];
     char buffer2[characters];
     char *record, *line;
@@ -274,7 +284,7 @@ int main(int argc, char *argv[]) {
                 outputLayer[j] = sigmoid(activation);
             }
 
-            // Print training output
+            // Print training output (only first 6 inputs for readability)
             printf("Input: %g | %g | %g | %g | %g | %g |      Output: %g      Expected Output: %g \n",
                    trainingInputs[i][1], trainingInputs[i][2], trainingInputs[i][3], trainingInputs[i][4], trainingInputs[i][5], trainingInputs[i][6],
                    outputLayer[0], trainingOutputs[i][0]);
