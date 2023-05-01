@@ -1,5 +1,4 @@
 // Deep Neural Network parallelized using CUDA
-
 // include necesary libraries 
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,7 +81,7 @@ __global__ void forward_kernel(double* X, double* W1, double* W2, double* W3, do
         hidden1[tid] = relu(sum + b1[tid]);
     }
 
-    //__syncthreads();
+    __syncthreads();
 
     if (tid < HIDDEN_SIZE) {
         double sum = 0.0;
@@ -92,7 +91,7 @@ __global__ void forward_kernel(double* X, double* W1, double* W2, double* W3, do
         hidden2[tid] = relu(sum + b2[tid]);
     }
 
-    //__syncthreads();
+   __syncthreads();
 
     if (tid == 0) {
         double sum = 0.0;
@@ -149,6 +148,8 @@ int main(int argc, char *argv[]) {
 
     double** inputTrain = new double* [numTrain];
     double** X = new double* [numTrain];
+
+    int numThread = atoi(argv[1]);
    
     for (int i = 0; i < numTrain; ++i) {
         inputTrain[i] = new double[INPUT_SIZE + 1];
@@ -235,6 +236,13 @@ int main(int argc, char *argv[]) {
         h_b3[i] = (double)rand() / RAND_MAX;
     }
 
+    clock_t startTime;
+    clock_t endTime;
+
+
+    startTime = clock();
+
+
     for (int i = 0; i < numTrain; ++i) {
         cudaMemcpy(dX + i * INPUT_SIZE, X[i], INPUT_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     }
@@ -262,14 +270,14 @@ int main(int argc, char *argv[]) {
             timerStart();
 
             // Forward propagation
-            forward_kernel<<<1, 256>>>(dX + rowIdx * INPUT_SIZE, d_W1, d_W2, d_W3, d_b1, d_b2, d_b3, hidden, hidden2, output);
+            forward_kernel<<<1, numThread>>>(dX + rowIdx * INPUT_SIZE, d_W1, d_W2, d_W3, d_b1, d_b2, d_b3, hidden, hidden2, output);
             HANDLE_ERROR(cudaDeviceSynchronize());
             // Backward propagation
-            backward_kernel<<<1, 256>>>(dX + rowIdx * INPUT_SIZE, d_W1, d_W2, d_W3, d_b1, d_b2, d_b3, hidden, hidden2, output, y[epoch]);
+            backward_kernel<<<1, numThread>>>(dX + rowIdx * INPUT_SIZE, d_W1, d_W2, d_W3, d_b1, d_b2, d_b3, hidden, hidden2, output, y[epoch]);
             HANDLE_ERROR(cudaDeviceSynchronize());
 
-            sprintf(szInfo, "[%d th-epoch][%d th-train] time elapsed : ", epoch, rowIdx);
-            timerStop(szInfo);
+            // sprintf(szInfo, "[%d th-epoch][%d th-train] time elapsed : ", epoch, rowIdx);
+            // timerStop(szInfo);
         }
     }
 
@@ -280,6 +288,14 @@ int main(int argc, char *argv[]) {
     cudaMemcpy(h_b1, d_b1, INPUT_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_b2, d_b2, HIDDEN_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_b3, d_b3, HIDDEN_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
+
+    endTime = clock();
+    double total_t;
+    total_t = (double)(endTime - startTime)/ CLOCKS_PER_SEC;
+    printf("Total time taken = %fs \n", total_t);
+
+
+
 /*
     // Print final weights
     printf("Final weights W1: \n");
