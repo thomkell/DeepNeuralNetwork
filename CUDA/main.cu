@@ -106,13 +106,16 @@ __global__ void backward_kernel(double* X, double* W1, double* W2, double* W3, d
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (tid == 0) {
+        // calculate output weight
         double d_output = (*output - target) * dSigmoid(*output);
 
+        // calculate hidden 2 weight
         double d_hidden2[HIDDEN_SIZE];
         for (int i = 0; i < HIDDEN_SIZE; i++) {
             d_hidden2[i] = dRelu(hidden2[i]) * W3[i] * d_output;
         }
-
+        
+        // calculate hidden 1 weight
         double d_hidden1[HIDDEN_SIZE];
         for (int i = 0; i < HIDDEN_SIZE; i++) {
             double sum = 0.0;
@@ -122,6 +125,7 @@ __global__ void backward_kernel(double* X, double* W1, double* W2, double* W3, d
             d_hidden1[i] = dRelu(hidden1[i]) * sum;
         }
 
+        // update hidden weights 1 & bias
         for (int i = 0; i < HIDDEN_SIZE; i++) {
             for (int j = 0; j < INPUT_SIZE; j++) {
                 W1[j * HIDDEN_SIZE + i] -= LEARNING_RATE * X[j] * d_hidden1[i];
@@ -129,6 +133,7 @@ __global__ void backward_kernel(double* X, double* W1, double* W2, double* W3, d
             b1[i] -= LEARNING_RATE * d_hidden1[i];
         }
 
+        // update hidden weights 2 & bias
         for (int i = 0; i < HIDDEN_SIZE; i++) {
             for (int j = 0; j < HIDDEN_SIZE; j++) {
                 W2[j * HIDDEN_SIZE + i] -= LEARNING_RATE * hidden1[i] * d_hidden2[j];
@@ -136,6 +141,7 @@ __global__ void backward_kernel(double* X, double* W1, double* W2, double* W3, d
             b2[i] -= LEARNING_RATE * d_hidden2[i];
         }
 
+        // update output weights & bias
         for (int i = 0; i < HIDDEN_SIZE; i++) {
             W3[i] -= LEARNING_RATE * hidden2[i] * d_output;
         }
