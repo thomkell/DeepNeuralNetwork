@@ -5,14 +5,32 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include <sys/time.h>
+#include <cuda_runtime.h>
 
-#define INPUT_SIZE 4800
-#define HIDDEN_SIZE 4800
+#define TIME_DIVIDER 1000000
+
+long long get_time() {
+    return TIME_DIVIDER * clock() / CLOCKS_PER_SEC;
+}
+
+long long t_start;
+void timerStart() {
+    t_start = get_time();
+}
+
+double timerStop(const char* info) {
+    double time = ((double)(get_time() - t_start)) / TIME_DIVIDER;
+    printf("Timing - %s. \t\tElasped %.12f seconds \n", info, time);
+    return time;
+}
+
+#define INPUT_SIZE 570
+#define HIDDEN_SIZE 570
 #define OUTPUT_SIZE 1
 #define LEARNING_RATE 0.0001
-#define NUM_EPOCHS 10
+#define NUM_EPOCHS 1
 #define numTrain 455
+#define MAX_LINE_BUFFER_SIZE 160000
 
 // error handler defintion
 #define HANDLE_ERROR( err ) ( HandleError( err , __FILE__, __LINE__ ) )
@@ -64,7 +82,7 @@ __global__ void forward_kernel(double* X, double* W1, double* W2, double* W3, do
         hidden1[tid] = relu(sum + b1[tid]);
     }
 
-    __syncthreads();
+    //__syncthreads();
 
     if (tid < HIDDEN_SIZE) {
         double sum = 0.0;
@@ -74,7 +92,7 @@ __global__ void forward_kernel(double* X, double* W1, double* W2, double* W3, do
         hidden2[tid] = relu(sum + b2[tid]);
     }
 
-    __syncthreads();
+    //__syncthreads();
 
     if (tid == 0) {
         double sum = 0.0;
@@ -129,9 +147,15 @@ __global__ void backward_kernel(double* X, double* W1, double* W2, double* W3, d
 
 int main(int argc, char *argv[]) {
 
-    double inputTrain[numTrain][INPUT_SIZE+1];
+    double** inputTrain = new double* [numTrain];
+    double** X = new double* [numTrain];
+   
+    for (int i = 0; i < numTrain; ++i) {
+        inputTrain[i] = new double[INPUT_SIZE + 1];
+        X[i] = new double[INPUT_SIZE];
+    }
 
-    char buffer[160000];
+    char* buffer = new char[MAX_LINE_BUFFER_SIZE];
     char *record, *line;
     int i = 0;
     int j = 0;
@@ -141,17 +165,18 @@ int main(int argc, char *argv[]) {
         printf("\n file opening failed train ");
         return -1;
     }
-    while ((line = fgets(buffer, sizeof(buffer), fstream)) != NULL) {
+    while ((line = fgets(buffer, MAX_LINE_BUFFER_SIZE, fstream)) != NULL) {
         record = strtok(line, ",");
         while (record != NULL) {
             inputTrain[i][j++] = strtod(record, NULL);
             record = strtok(NULL, ",");
+            if (j == INPUT_SIZE) {
+                j = 0;
+                i += 1;
+                break;
+            }
         }
-        if (j == INPUT_SIZE)
-            i += 1;
-    }
-
-    double X[numTrain][INPUT_SIZE];
+    }    
 
     // Initialize input data
     for (int i = 0; i < numTrain; i++) {
@@ -164,6 +189,9 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numTrain ; i++) {
             y[i] = inputTrain[i][0];
     }
+
+    double* dX;
+    cudaMalloc(&dX, numTrain * INPUT_SIZE * sizeof(double));
 
     // Initialize weights
     double *d_W1, *d_W2, *d_W3;
@@ -206,35 +234,42 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < OUTPUT_SIZE; i++) {
         h_b3[i] = (double)rand() / RAND_MAX;
     }
-    
-    
-    struct timeval t1, t2;
-    gettimeofday(&t1, 0);
+
+    for (int i = 0; i < numTrain; ++i) {
+        cudaMemcpy(dX + i * INPUT_SIZE, X[i], INPUT_SIZE * sizeof(double), cudaMemcpyHostToDevice);
+    }
 
     cudaMemcpy(d_W1, h_W1, INPUT_SIZE * HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_W2, h_W2, HIDDEN_SIZE * HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_W3, h_W3, HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_b1, h_b1, INPUT_SIZE * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_b2, h_b2, HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b3, h_b3, HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b3, h_b3, HIDDEN_SIZE * sizeof(double), cudaMemcpyHostToDevice);   
 
-   
+    double* hidden;
+    cudaMalloc(&hidden, HIDDEN_SIZE * sizeof(double));
+    double* hidden2;
+    cudaMalloc(&hidden2, HIDDEN_SIZE * sizeof(double));
+
+    double* output;
+    cudaMalloc(&output, sizeof(double));
+
+    char szInfo[0x100];
 
     // Training loop
     for (int epoch = 0; epoch < NUM_EPOCHS; epoch++) {
         for(int rowIdx = 0; rowIdx < numTrain; rowIdx ++){
-
-            double hidden[HIDDEN_SIZE];
-            double hidden2[HIDDEN_SIZE];
-            double output;
+            timerStart();
 
             // Forward propagation
-            forward_kernel<<<1, 2>>>(X[rowIdx], d_W1, d_W2, d_W3, d_b1, d_b2, d_b3, hidden, hidden2, &output);
-            cudaDeviceSynchronize();
-
+            forward_kernel<<<1, 256>>>(dX + rowIdx * INPUT_SIZE, d_W1, d_W2, d_W3, d_b1, d_b2, d_b3, hidden, hidden2, output);
+            HANDLE_ERROR(cudaDeviceSynchronize());
             // Backward propagation
-            backward_kernel<<<1, 2>>>(X[rowIdx], d_W1, d_W2, d_W3, d_b1, d_b2, d_b3, hidden, hidden2, &output, y[epoch]);
-            cudaDeviceSynchronize();
+            backward_kernel<<<1, 256>>>(dX + rowIdx * INPUT_SIZE, d_W1, d_W2, d_W3, d_b1, d_b2, d_b3, hidden, hidden2, output, y[epoch]);
+            HANDLE_ERROR(cudaDeviceSynchronize());
+
+            sprintf(szInfo, "[%d th-epoch][%d th-train] time elapsed : ", epoch, rowIdx);
+            timerStop(szInfo);
         }
     }
 
@@ -245,13 +280,10 @@ int main(int argc, char *argv[]) {
     cudaMemcpy(h_b1, d_b1, INPUT_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_b2, d_b2, HIDDEN_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_b3, d_b3, HIDDEN_SIZE * sizeof(double), cudaMemcpyDeviceToHost);
-
-
-    gettimeofday(&t2, 0);
-
+/*
     // Print final weights
     printf("Final weights W1: \n");
-    for (int i = 0; i < INPUT_SIZE * HIDDEN_SIZE; i++) {
+    for (int i = 0; i < 4 * HIDDEN_SIZE; i++) {
         printf("%.4f ", h_W1[i]);
     }
     printf("\n");
@@ -260,24 +292,32 @@ int main(int argc, char *argv[]) {
         printf("%.4f ", h_W2[i]);
     }
     printf("\n");
-
-
-    double time = (1000000.0*(t2.tv_sec-t1.tv_sec) + t2.tv_usec-t1.tv_usec)/1000.0;
-    printf("Time to generate:  %3.1f ms \n", time);
-
+*/
     // Free memory
+    cudaFree(dX);
     cudaFree(d_W1);
     cudaFree(d_W2);
     cudaFree(d_W3);
     cudaFree(d_b1);
     cudaFree(d_b2);
     cudaFree(d_b3);
+    cudaFree(hidden);
+    cudaFree(hidden2);
+    cudaFree(output);
     free(h_W1);
     free(h_W2);
     free(h_W3);
     free(h_b1);
     free(h_b2);
     free(h_b3);
+
+    for (int i = 0; i < numTrain; ++i) {
+       delete inputTrain[i];
+       delete X[i];
+    }
+    delete inputTrain;
+    delete X;
+    delete buffer;
 
     return 0;
 }
